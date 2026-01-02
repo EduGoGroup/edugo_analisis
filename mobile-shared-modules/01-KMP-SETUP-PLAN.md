@@ -1,172 +1,231 @@
 # Plan de Setup: edugo-kmp-shared
 
-## Resumen Ejecutivo
-
-Este documento define el plan completo para crear el proyecto **edugo-kmp-shared**, 
-un proyecto Kotlin Multiplatform con múltiples módulos independientes equivalente a `edugo-shared` de Go.
-
-**Plataformas objetivo**: 
-- Android API 35+
-- JVM Desktop
-- Kotlin/JS (Web) - con preparación para WASM futuro
-
-**Kotlin Version**: 2.1.0+
-**KMP**: Estable desde noviembre 2023
+> **Version del documento**: 2.0.0  
+> **Ultima actualizacion**: 2026-01-02  
+> **Estado**: Plan completo listo para implementacion
 
 ---
 
-## 1. Versiones de Dependencias (libs.versions.toml)
+## Resumen Ejecutivo
+
+Este documento define el plan completo para crear el proyecto **edugo-kmp-shared**, 
+un proyecto Kotlin Multiplatform con multiples modulos independientes equivalente a `edugo-shared` de Go.
+
+### Plataformas Objetivo
+- **Android**: API 35+ (Android 15)
+- **JVM Desktop**: Para aplicaciones de escritorio
+- **Kotlin/JS**: Web (con preparacion para WASM futuro)
+
+### Stack Tecnologico Base (NO NEGOCIABLE)
+
+| Componente | Version | Notas |
+|------------|---------|-------|
+| **Kotlin** | 2.1.20 | K2 Compiler habilitado |
+| **Gradle** | 8.11 | Con Version Catalogs |
+| **JDK** | 21 LTS | Minimo requerido |
+| **Android compileSdk** | 35 | Android 15 |
+| **Android targetSdk** | 35 | Android 15 |
+| **Android minSdk** | 26 | Android 8.0 Oreo |
+| **AGP** | 8.7.2 | Android Gradle Plugin |
+
+---
+
+## 1. Matriz de Compatibilidad de Dependencias
+
+### 1.1 Versiones Verificadas (Enero 2026)
+
+| Dependencia | Version | Kotlin 2.1.20 | Notas |
+|-------------|---------|---------------|-------|
+| **kotlinx-coroutines** | 1.10.2 | ✅ Compatible | Companion version para Kotlin 2.1.0 |
+| **kotlinx-serialization** | 1.8.1 | ✅ Compatible | Requiere Kotlin 2.1.0+ |
+| **kotlinx-datetime** | 0.6.2 | ✅ Compatible | Usar 0.6.x para compatibilidad |
+| **Ktor** | 3.1.3 | ✅ Compatible | Soporte SSE, WASM-JS |
+| **Kermit** | 2.0.4 | ✅ Compatible | Ultima version estable |
+| **multiplatform-settings** | 1.3.0 | ✅ Compatible | Actualizado a Kotlin 2.1.0, AGP 8.7.2 |
+| **kotlin.uuid** | stdlib | ✅ Nativo | Incluido en Kotlin 2.1+ (Experimental) |
+
+### 1.2 Notas de Compatibilidad Importantes
+
+1. **UUID Nativo**: La libreria `benasher44/uuid` fue archivada en mayo 2025. Kotlin 2.1+ incluye `kotlin.uuid.Uuid` nativo.
+
+2. **kotlinx-datetime 0.7.x**: Elimina `kotlinx.datetime.Instant` a favor de `kotlin.time.Instant`. Para maxima compatibilidad, usar 0.6.2.
+
+3. **Ktor 3.1.x**: Requiere kotlinx-coroutines 1.10.x y kotlinx-serialization 1.8.x.
+
+4. **multiplatform-settings 1.3.0**: Actualizado a Kotlin 2.1.0, Gradle 8.11 y AGP 8.7.2.
+
+---
+
+## 2. Estructura Completa de Versiones (libs.versions.toml)
 
 ```toml
 # gradle/libs.versions.toml
+# edugo-kmp-shared - Version Catalog
+# Ultima verificacion: 2026-01-02
 
 [versions]
-kotlin = "2.1.0"
-kotlinx-coroutines = "1.9.0"
-kotlinx-serialization = "1.7.3"
-kotlinx-datetime = "0.6.1"
-ktor = "3.0.2"
+# Kotlin & Core
+kotlin = "2.1.20"
+kotlinx-coroutines = "1.10.2"
+kotlinx-serialization = "1.8.1"
+kotlinx-datetime = "0.6.2"
+
+# Ktor
+ktor = "3.1.3"
+
+# Logging
 kermit = "2.0.4"
-multiplatform-settings = "1.2.0"
-uuid = "0.8.4"
-android-gradle = "8.7.0"
+
+# Storage
+multiplatform-settings = "1.3.0"
+
+# Android
+android-gradle = "8.7.2"
 android-compileSdk = "35"
 android-minSdk = "26"
 android-targetSdk = "35"
 
+# Build
+java-target = "21"
+jvm-target = "21"
+
 [libraries]
+# ============================================
+# Kotlinx Libraries
+# ============================================
+
 # Coroutines
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 # Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 
 # DateTime
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
+# ============================================
 # Ktor Client
+# ============================================
+
+# Core
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+
+# Serialization
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# Engines - Platform Specific
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 
+# ============================================
 # Logging
+# ============================================
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-crashlytics = { module = "co.touchlab:kermit-crashlytics", version.ref = "kermit" }
 
-# Settings/Storage
+# ============================================
+# Storage / Settings
+# ============================================
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
+multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }
 multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-settings-coroutines", version.ref = "multiplatform-settings" }
+multiplatform-settings-serialization = { module = "com.russhwolf:multiplatform-settings-serialization", version.ref = "multiplatform-settings" }
 
-# UUID
-uuid = { module = "com.benasher44:uuid", version.ref = "uuid" }
-
+# ============================================
 # Testing
+# ============================================
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+
+# ============================================
+# Build Logic
+# ============================================
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android-gradle" }
+
+[bundles]
+# Bundle para modulo network
+ktor-common = [
+    "ktor-client-core",
+    "ktor-client-content-negotiation",
+    "ktor-client-logging",
+    "ktor-serialization-kotlinx-json"
+]
+
+# Bundle para modulo storage
+settings-common = [
+    "multiplatform-settings",
+    "multiplatform-settings-coroutines"
+]
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "android-gradle" }
+android-application = { id = "com.android.application", version.ref = "android-gradle" }
 ```
 
 ---
 
-## 2. Estructura del Proyecto
+## 3. Estructura del Proyecto
 
 ```
 edugo-kmp-shared/
-├── settings.gradle.kts
-├── build.gradle.kts
-├── gradle.properties
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                      # Build y tests
+│       ├── release.yml                 # Crear releases
+│       └── publish.yml                 # Publicar a Maven
+│
 ├── gradle/
-│   ├── libs.versions.toml
+│   ├── libs.versions.toml              # Version Catalog
 │   └── wrapper/
-├── build-logic/
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+│
+├── build-logic/                        # Convention Plugins
 │   ├── settings.gradle.kts
 │   ├── build.gradle.kts
 │   └── src/main/kotlin/
-│       └── kmp.library.gradle.kts    # Convention plugin
-├── .github/
-│   └── workflows/
-│       ├── ci.yml
-│       ├── release.yml
-│       └── publish.yml
-├── README.md
-├── CHANGELOG.md
+│       ├── kmp.library.gradle.kts      # Plugin base KMP
+│       ├── kmp.android.gradle.kts      # Config Android
+│       └── kmp.publishing.gradle.kts   # Config publicacion
 │
 ├── modules/
-│   ├── common/                       # EduGoCommon
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       ├── commonMain/kotlin/
-│   │       ├── commonTest/kotlin/
-│   │       ├── androidMain/kotlin/
-│   │       ├── jvmMain/kotlin/
-│   │       └── jsMain/kotlin/
-│   │
-│   ├── logger/                       # EduGoLogger
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       ├── commonMain/kotlin/
-│   │       ├── androidMain/kotlin/
-│   │       ├── jvmMain/kotlin/
-│   │       └── jsMain/kotlin/
-│   │
-│   ├── network/                      # EduGoNetwork
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       ├── commonMain/kotlin/
-│   │       ├── androidMain/kotlin/
-│   │       ├── jvmMain/kotlin/
-│   │       └── jsMain/kotlin/
-│   │
-│   ├── storage/                      # EduGoStorage
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       ├── commonMain/kotlin/
-│   │       ├── androidMain/kotlin/
-│   │       ├── jvmMain/kotlin/
-│   │       └── jsMain/kotlin/
-│   │
-│   ├── auth/                         # EduGoAuth
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       ├── commonMain/kotlin/
-│   │       ├── commonTest/kotlin/
-│   │       └── ...
-│   │
-│   ├── analytics/                    # EduGoAnalytics
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       └── ...
-│   │
-│   ├── roles/                        # EduGoRoles
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       └── commonMain/kotlin/    # Solo commonMain
-│   │
-│   ├── models/                       # EduGoModels
-│   │   ├── build.gradle.kts
-│   │   └── src/
-│   │       └── commonMain/kotlin/
-│   │
-│   └── api/                          # EduGoAPI
-│       ├── build.gradle.kts
-│       └── src/
-│           └── ...
+│   ├── common/                         # EduGoCommon - Modulo base
+│   ├── logger/                         # EduGoLogger
+│   ├── network/                        # EduGoNetwork
+│   ├── storage/                        # EduGoStorage
+│   ├── auth/                           # EduGoAuth
+│   ├── roles/                          # EduGoRoles
+│   ├── models/                         # EduGoModels
+│   ├── api/                            # EduGoAPI
+│   └── analytics/                      # EduGoAnalytics
+│
+├── settings.gradle.kts
+├── build.gradle.kts
+├── gradle.properties
+├── README.md
+└── CHANGELOG.md
 ```
 
 ---
 
-## 3. settings.gradle.kts
+## 4. Archivos de Configuracion Raiz
+
+### 4.1 settings.gradle.kts
 
 ```kotlin
+// settings.gradle.kts
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -177,6 +236,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositories {
         google()
         mavenCentral()
@@ -185,22 +245,121 @@ dependencyResolutionManagement {
 
 rootProject.name = "edugo-kmp-shared"
 
+// Modulos
 include(":modules:common")
 include(":modules:logger")
 include(":modules:network")
 include(":modules:storage")
 include(":modules:auth")
-include(":modules:analytics")
 include(":modules:roles")
 include(":modules:models")
 include(":modules:api")
+include(":modules:analytics")
+```
+
+### 4.2 build.gradle.kts (raiz)
+
+```kotlin
+// build.gradle.kts (root)
+plugins {
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.android.library) apply false
+}
+
+allprojects {
+    group = "com.edugo.shared"
+    version = "1.0.0-SNAPSHOT"
+}
+
+tasks.register("clean", Delete::class) {
+    delete(layout.buildDirectory)
+}
+```
+
+### 4.3 gradle.properties
+
+```properties
+# gradle.properties
+
+# Project
+org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=true
+
+# Kotlin
+kotlin.code.style=official
+kotlin.incremental=true
+kotlin.incremental.multiplatform=true
+
+# K2 Compiler
+kotlin.experimental.tryK2=true
+
+# KMP
+kotlin.mpp.stability.nowarn=true
+kotlin.mpp.androidGradlePluginCompatibility.nowarn=true
+kotlin.mpp.enableCInteropCommonization=true
+kotlin.mpp.applyDefaultHierarchyTemplate=true
+
+# Android
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+android.defaults.buildfeatures.buildconfig=false
 ```
 
 ---
 
-## 4. Convention Plugin (build-logic)
+## 5. Convention Plugins (build-logic)
 
-### build-logic/src/main/kotlin/kmp.library.gradle.kts
+### 5.1 build-logic/settings.gradle.kts
+
+```kotlin
+dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
+}
+
+rootProject.name = "build-logic"
+```
+
+### 5.2 build-logic/build.gradle.kts
+
+```kotlin
+plugins {
+    `kotlin-dsl`
+}
+
+dependencies {
+    compileOnly(libs.kotlin.gradle.plugin)
+    compileOnly(libs.android.gradle.plugin)
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+gradlePlugin {
+    plugins {
+        register("kmpLibrary") {
+            id = "edugo.kmp.library"
+            implementationClass = "KmpLibraryPlugin"
+        }
+    }
+}
+```
+
+### 5.3 build-logic/src/main/kotlin/kmp.library.gradle.kts
 
 ```kotlin
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -210,28 +369,41 @@ plugins {
     id("com.android.library")
 }
 
+val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+
 kotlin {
-    // Targets
+    // Android Target
     androidTarget {
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_17)
+                    jvmTarget.set(JvmTarget.JVM_21)
+                    freeCompilerArgs.addAll(
+                        "-opt-in=kotlin.RequiresOptIn",
+                        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
+                    )
                 }
             }
         }
+        publishLibraryVariants("release")
     }
     
+    // JVM Desktop Target
     jvm("desktop") {
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_17)
+                    jvmTarget.set(JvmTarget.JVM_21)
+                    freeCompilerArgs.addAll(
+                        "-opt-in=kotlin.RequiresOptIn",
+                        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
+                    )
                 }
             }
         }
     }
     
+    // JavaScript Target
     js(IR) {
         browser {
             testTask {
@@ -243,650 +415,506 @@ kotlin {
         binaries.library()
     }
     
-    // Prepare for future WASM support
-    // wasmJs { browser() }
-    
-    // Source sets
     sourceSets {
-        val commonMain by getting
-        val commonTest by getting {
+        val commonMain by getting {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         
-        val androidMain by getting
-        val desktopMain by getting
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+        
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.android)
+            }
+        }
+        
+        val desktopMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.swing)
+            }
+        }
+        
         val jsMain by getting
+        val jsTest by getting
     }
+    
+    explicitApi()
 }
 
 android {
     namespace = "com.edugo.shared.${project.name}"
-    compileSdk = 35
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
     
     defaultConfig {
-        minSdk = 26
+        minSdk = libs.versions.android.minSdk.get().toInt()
     }
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+    
+    buildFeatures {
+        buildConfig = false
     }
 }
 ```
 
 ---
 
-## 5. Ejemplos de Código por Módulo
+## 6. Ejemplos de Codigo por Modulo
 
-### 5.1 modules/common
+### 6.1 modules/common
+
+#### build.gradle.kts
 
 ```kotlin
-// src/commonMain/kotlin/com/edugo/shared/common/errors/AppError.kt
+plugins {
+    id("kmp.library")
+    alias(libs.plugins.kotlin.serialization)
+}
+
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
+            }
+        }
+    }
+}
+```
+
+#### ErrorCode.kt
+
+```kotlin
+package com.edugo.shared.common.errors
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+public enum class ErrorCode {
+    // Autenticacion
+    @SerialName("AUTH_UNAUTHORIZED") UNAUTHORIZED,
+    @SerialName("AUTH_TOKEN_EXPIRED") TOKEN_EXPIRED,
+    @SerialName("AUTH_TOKEN_INVALID") TOKEN_INVALID,
+    @SerialName("AUTH_INVALID_CREDENTIALS") INVALID_CREDENTIALS,
+    
+    // Red
+    @SerialName("NET_ERROR") NETWORK_ERROR,
+    @SerialName("NET_TIMEOUT") TIMEOUT,
+    @SerialName("NET_SERVER_ERROR") SERVER_ERROR,
+    
+    // Validacion
+    @SerialName("VAL_FAILED") VALIDATION_FAILED,
+    @SerialName("VAL_NOT_FOUND") NOT_FOUND,
+    @SerialName("VAL_CONFLICT") CONFLICT,
+    @SerialName("VAL_BAD_REQUEST") BAD_REQUEST,
+    
+    // Permisos
+    @SerialName("PERM_FORBIDDEN") FORBIDDEN,
+    @SerialName("PERM_INSUFFICIENT") INSUFFICIENT_PERMISSIONS,
+    
+    // General
+    @SerialName("UNKNOWN") UNKNOWN
+}
+```
+
+#### AppError.kt
+
+```kotlin
 package com.edugo.shared.common.errors
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AppError(
+public data class AppError(
     val code: ErrorCode,
-    val message: String,
-    val details: Map<String, String>? = null
-) : Exception(message)
-
-@Serializable
-enum class ErrorCode {
-    // Auth
-    UNAUTHORIZED,
-    TOKEN_EXPIRED,
-    INVALID_CREDENTIALS,
+    override val message: String,
+    val details: Map<String, String>? = null,
+    val cause: String? = null
+) : Exception(message) {
     
-    // Network
-    NETWORK_ERROR,
-    TIMEOUT,
-    SERVER_ERROR,
-    
-    // Validation
-    VALIDATION_FAILED,
-    NOT_FOUND,
-    
-    // Storage
-    STORAGE_FAILED,
-    
-    // General
-    UNKNOWN
+    public companion object {
+        public fun network(message: String, cause: Throwable? = null): AppError =
+            AppError(ErrorCode.NETWORK_ERROR, message, cause = cause?.message)
+        
+        public fun unauthorized(message: String = "No autorizado"): AppError =
+            AppError(ErrorCode.UNAUTHORIZED, message)
+        
+        public fun tokenExpired(message: String = "Token expirado"): AppError =
+            AppError(ErrorCode.TOKEN_EXPIRED, message)
+        
+        public fun validation(message: String, details: Map<String, String>? = null): AppError =
+            AppError(ErrorCode.VALIDATION_FAILED, message, details)
+        
+        public fun notFound(resource: String): AppError =
+            AppError(ErrorCode.NOT_FOUND, "$resource no encontrado")
+        
+        public fun timeout(message: String = "Tiempo de espera agotado"): AppError =
+            AppError(ErrorCode.TIMEOUT, message)
+        
+        public fun unknown(cause: Throwable): AppError =
+            AppError(ErrorCode.UNKNOWN, cause.message ?: "Error desconocido", cause = cause.toString())
+    }
 }
-
-// Extension functions
-fun ErrorCode.toAppError(message: String): AppError = AppError(this, message)
 ```
 
-### 5.2 modules/logger
+#### Result.kt
 
 ```kotlin
-// src/commonMain/kotlin/com/edugo/shared/logger/Logger.kt
+package com.edugo.shared.common.types
+
+import com.edugo.shared.common.errors.AppError
+
+public sealed class Result<out T> {
+    
+    public data class Success<T>(val data: T) : Result<T>()
+    public data class Failure(val error: AppError) : Result<Nothing>()
+    
+    public val isSuccess: Boolean get() = this is Success
+    public val isFailure: Boolean get() = this is Failure
+    
+    public fun getOrNull(): T? = when (this) {
+        is Success -> data
+        is Failure -> null
+    }
+    
+    public fun getOrThrow(): T = when (this) {
+        is Success -> data
+        is Failure -> throw error
+    }
+    
+    public inline fun <R> map(transform: (T) -> R): Result<R> = when (this) {
+        is Success -> Success(transform(data))
+        is Failure -> this
+    }
+    
+    public inline fun <R> flatMap(transform: (T) -> Result<R>): Result<R> = when (this) {
+        is Success -> transform(data)
+        is Failure -> this
+    }
+    
+    public inline fun onSuccess(action: (T) -> Unit): Result<T> {
+        if (this is Success) action(data)
+        return this
+    }
+    
+    public inline fun onFailure(action: (AppError) -> Unit): Result<T> {
+        if (this is Failure) action(error)
+        return this
+    }
+    
+    public companion object {
+        public inline fun <T> runCatching(block: () -> T): Result<T> = try {
+            Success(block())
+        } catch (e: AppError) {
+            Failure(e)
+        } catch (e: Exception) {
+            Failure(AppError.unknown(e))
+        }
+        
+        public fun <T> success(value: T): Result<T> = Success(value)
+        public fun failure(error: AppError): Result<Nothing> = Failure(error)
+    }
+}
+```
+
+### 6.2 modules/logger
+
+```kotlin
+// EduGoLogger.kt - Wrapper de Kermit
 package com.edugo.shared.logger
 
-interface Logger {
-    fun debug(message: String, tag: String? = null)
-    fun info(message: String, tag: String? = null)
-    fun warn(message: String, tag: String? = null)
-    fun error(message: String, throwable: Throwable? = null, tag: String? = null)
-}
+import co.touchlab.kermit.Logger as KermitLogger
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.loggerConfigInit
+import co.touchlab.kermit.platformLogWriter
 
-enum class LogLevel {
-    DEBUG, INFO, WARN, ERROR
-}
-
-// src/commonMain/kotlin/com/edugo/shared/logger/KermitLogger.kt
-package com.edugo.shared.logger
-
-import co.touchlab.kermit.Logger as Kermit
-
-class KermitLogger(
-    private val tag: String = "EduGo"
+public class EduGoLogger private constructor(
+    private val kermit: KermitLogger,
+    private val defaultTag: String
 ) : Logger {
     
-    private val kermit = Kermit.withTag(tag)
-    
-    override fun debug(message: String, tag: String?) {
-        if (tag != null) {
-            Kermit.withTag(tag).d { message }
-        } else {
-            kermit.d { message }
-        }
+    override fun debug(message: String, tag: String?, throwable: Throwable?) {
+        getLogger(tag).d(throwable) { message }
     }
     
-    override fun info(message: String, tag: String?) {
-        if (tag != null) {
-            Kermit.withTag(tag).i { message }
-        } else {
-            kermit.i { message }
-        }
+    override fun info(message: String, tag: String?, throwable: Throwable?) {
+        getLogger(tag).i(throwable) { message }
     }
     
-    override fun warn(message: String, tag: String?) {
-        if (tag != null) {
-            Kermit.withTag(tag).w { message }
-        } else {
-            kermit.w { message }
-        }
+    override fun warn(message: String, tag: String?, throwable: Throwable?) {
+        getLogger(tag).w(throwable) { message }
     }
     
-    override fun error(message: String, throwable: Throwable?, tag: String?) {
-        if (tag != null) {
-            Kermit.withTag(tag).e(throwable) { message }
-        } else {
-            kermit.e(throwable) { message }
+    override fun error(message: String, tag: String?, throwable: Throwable?) {
+        getLogger(tag).e(throwable) { message }
+    }
+    
+    override fun withTag(tag: String): Logger = 
+        EduGoLogger(kermit.withTag(tag), tag)
+    
+    private fun getLogger(tag: String?): KermitLogger =
+        if (tag != null && tag != defaultTag) kermit.withTag(tag) else kermit
+    
+    public companion object {
+        private var instance: EduGoLogger? = null
+        
+        public fun getInstance(tag: String = "EduGo"): Logger {
+            return instance ?: synchronized(this) {
+                instance ?: createInstance(tag).also { instance = it }
+            }
         }
+        
+        private fun createInstance(tag: String): EduGoLogger {
+            val config = loggerConfigInit(platformLogWriter(), Severity.Debug)
+            return EduGoLogger(KermitLogger(config, tag), tag)
+        }
+        
+        public fun create(tag: String): Logger = getInstance().withTag(tag)
     }
 }
 ```
 
-### 5.3 modules/network
+### 6.3 modules/network
 
 ```kotlin
-// src/commonMain/kotlin/com/edugo/shared/network/HttpClient.kt
+// EduGoHttpClient.kt
 package com.edugo.shared.network
 
+import com.edugo.shared.common.errors.AppError
+import com.edugo.shared.common.errors.ErrorCode
+import com.edugo.shared.common.types.Result
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import com.edugo.shared.common.errors.AppError
-import com.edugo.shared.common.errors.ErrorCode
 
-expect fun createPlatformHttpClient(): HttpClient
-
-class EduGoHttpClient(
+public class EduGoHttpClient(
     private val baseUrl: String,
-    private val logger: com.edugo.shared.logger.Logger
+    private val tokenProvider: (suspend () -> String?)? = null
 ) {
-    private val json = Json {
+    private val json: Json = Json {
         ignoreUnknownKeys = true
         isLenient = true
-        prettyPrint = false
+        encodeDefaults = true
+        coerceInputValues = true
     }
     
-    private val client = createPlatformHttpClient().config {
-        install(ContentNegotiation) {
-            json(this@EduGoHttpClient.json)
-        }
-        
-        install(Logging) {
-            level = LogLevel.INFO
-        }
-        
+    private val client: HttpClient = createPlatformHttpClient().config {
+        install(ContentNegotiation) { json(this@EduGoHttpClient.json) }
         install(HttpTimeout) {
             requestTimeoutMillis = 30_000
             connectTimeoutMillis = 10_000
         }
-        
         defaultRequest {
             url(baseUrl)
             contentType(ContentType.Application.Json)
         }
     }
     
-    suspend inline fun <reified T> get(
+    public suspend inline fun <reified T> get(
         path: String,
-        headers: Map<String, String> = emptyMap()
-    ): T {
-        return execute {
-            client.get(path) {
-                headers.forEach { (key, value) -> header(key, value) }
-            }
-        }
-    }
+        queryParams: Map<String, String> = emptyMap()
+    ): Result<T> = execute { client.get(path) { queryParams.forEach { parameter(it.key, it.value) } } }
     
-    suspend inline fun <reified T, reified B> post(
+    public suspend inline fun <reified T, reified B> post(
         path: String,
-        body: B,
-        headers: Map<String, String> = emptyMap()
-    ): T {
-        return execute {
-            client.post(path) {
-                headers.forEach { (key, value) -> header(key, value) }
-                setBody(body)
-            }
-        }
+        body: B
+    ): Result<T> = execute { client.post(path) { setBody(body) } }
+    
+    @PublishedApi
+    internal suspend inline fun <reified T> execute(
+        block: suspend () -> HttpResponse
+    ): Result<T> = try {
+        val response = block()
+        if (response.status.isSuccess()) Result.success(response.body())
+        else Result.failure(mapHttpError(response))
+    } catch (e: AppError) {
+        Result.failure(e)
+    } catch (e: Exception) {
+        Result.failure(AppError.unknown(e))
     }
     
-    suspend inline fun <reified T> execute(
-        block: () -> HttpResponse
-    ): T {
-        try {
-            val response = block()
-            
-            if (!response.status.isSuccess()) {
-                throw AppError(
-                    code = when (response.status) {
-                        HttpStatusCode.Unauthorized -> ErrorCode.UNAUTHORIZED
-                        HttpStatusCode.NotFound -> ErrorCode.NOT_FOUND
-                        else -> ErrorCode.SERVER_ERROR
-                    },
-                    message = "HTTP ${response.status.value}: ${response.status.description}"
-                )
-            }
-            
-            return response.body()
-        } catch (e: Exception) {
-            when (e) {
-                is AppError -> throw e
-                is HttpRequestTimeoutException -> throw AppError(
-                    code = ErrorCode.TIMEOUT,
-                    message = "Request timed out"
-                )
-                else -> throw AppError(
-                    code = ErrorCode.NETWORK_ERROR,
-                    message = e.message ?: "Network error"
-                )
-            }
-        }
+    @PublishedApi
+    internal fun mapHttpError(response: HttpResponse): AppError = when (response.status) {
+        HttpStatusCode.Unauthorized -> AppError(ErrorCode.UNAUTHORIZED, "No autorizado")
+        HttpStatusCode.Forbidden -> AppError(ErrorCode.FORBIDDEN, "Acceso denegado")
+        HttpStatusCode.NotFound -> AppError(ErrorCode.NOT_FOUND, "Recurso no encontrado")
+        else -> AppError(ErrorCode.UNKNOWN, "HTTP ${response.status.value}")
     }
     
-    fun close() {
-        client.close()
-    }
+    public fun close() { client.close() }
 }
 
-// src/androidMain/kotlin/com/edugo/shared/network/HttpClient.android.kt
-package com.edugo.shared.network
-
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(OkHttp)
-
-// src/jvmMain/kotlin/com/edugo/shared/network/HttpClient.jvm.kt
-package com.edugo.shared.network
-
-import io.ktor.client.*
-import io.ktor.client.engine.java.*
-
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(Java)
-
-// src/jsMain/kotlin/com/edugo/shared/network/HttpClient.js.kt
-package com.edugo.shared.network
-
-import io.ktor.client.*
-import io.ktor.client.engine.js.*
-
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(Js)
+// Expect/Actual pattern para engines
+public expect fun createPlatformHttpClient(): HttpClient
 ```
 
-### 5.4 modules/storage
+### 6.4 modules/roles
+
+> **IMPORTANTE**: Los roles DEBEN coincidir exactamente con el backend (edugo-shared/common/types/enum/role.go)
 
 ```kotlin
-// src/commonMain/kotlin/com/edugo/shared/storage/SecureStorage.kt
-package com.edugo.shared.storage
-
-interface SecureStorage {
-    suspend fun save(key: String, value: String)
-    suspend fun load(key: String): String?
-    suspend fun delete(key: String)
-    suspend fun clear()
-}
-
-// src/commonMain/kotlin/com/edugo/shared/storage/SettingsStorage.kt
-package com.edugo.shared.storage
-
-import com.russhwolf.settings.Settings
-import com.russhwolf.settings.coroutines.SuspendSettings
-import com.russhwolf.settings.coroutines.toSuspendSettings
-
-expect fun createSettings(): Settings
-
-class SettingsStorage : SecureStorage {
-    private val settings: SuspendSettings = createSettings().toSuspendSettings()
-    
-    override suspend fun save(key: String, value: String) {
-        settings.putString(key, value)
-    }
-    
-    override suspend fun load(key: String): String? {
-        return settings.getStringOrNull(key)
-    }
-    
-    override suspend fun delete(key: String) {
-        settings.remove(key)
-    }
-    
-    override suspend fun clear() {
-        settings.clear()
-    }
-}
-
-// src/androidMain/kotlin/com/edugo/shared/storage/Settings.android.kt
-package com.edugo.shared.storage
-
-import android.content.Context
-import com.russhwolf.settings.Settings
-import com.russhwolf.settings.SharedPreferencesSettings
-
-// Context debe ser proporcionado por la aplicación
-object AndroidContext {
-    lateinit var context: Context
-}
-
-actual fun createSettings(): Settings {
-    return SharedPreferencesSettings(
-        AndroidContext.context.getSharedPreferences(
-            "edugo_secure_prefs",
-            Context.MODE_PRIVATE
-        )
-    )
-}
-
-// src/jvmMain/kotlin/com/edugo/shared/storage/Settings.jvm.kt
-package com.edugo.shared.storage
-
-import com.russhwolf.settings.PreferencesSettings
-import com.russhwolf.settings.Settings
-import java.util.prefs.Preferences
-
-actual fun createSettings(): Settings {
-    return PreferencesSettings(
-        Preferences.userRoot().node("edugo")
-    )
-}
-
-// src/jsMain/kotlin/com/edugo/shared/storage/Settings.js.kt
-package com.edugo.shared.storage
-
-import com.russhwolf.settings.Settings
-import com.russhwolf.settings.StorageSettings
-
-actual fun createSettings(): Settings {
-    return StorageSettings()
-}
-```
-
-### 5.5 modules/auth
-
-```kotlin
-// src/commonMain/kotlin/com/edugo/shared/auth/TokenManager.kt
-package com.edugo.shared.auth
-
-import com.edugo.shared.storage.SecureStorage
-import com.edugo.shared.common.errors.AppError
-import com.edugo.shared.common.errors.ErrorCode
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
-@Serializable
-data class TokenInfo(
-    val accessToken: String,
-    val refreshToken: String,
-    val expiresAt: Long // Unix timestamp
-) {
-    val isExpired: Boolean
-        get() = kotlinx.datetime.Clock.System.now().epochSeconds > expiresAt
-}
-
-class TokenManager(
-    private val storage: SecureStorage,
-    private val refresher: suspend (String) -> TokenInfo
-) {
-    private val mutex = Mutex()
-    private var cachedToken: TokenInfo? = null
-    
-    private val json = Json { ignoreUnknownKeys = true }
-    
-    suspend fun getAccessToken(): String = mutex.withLock {
-        val token = cachedToken ?: loadFromStorage()
-        
-        if (token == null) {
-            throw AppError(ErrorCode.UNAUTHORIZED, "No token available")
-        }
-        
-        if (token.isExpired) {
-            val newToken = refresher(token.refreshToken)
-            saveToken(newToken)
-            return newToken.accessToken
-        }
-        
-        return token.accessToken
-    }
-    
-    suspend fun saveToken(token: TokenInfo) = mutex.withLock {
-        cachedToken = token
-        storage.save("auth_token", json.encodeToString(TokenInfo.serializer(), token))
-    }
-    
-    suspend fun clearToken() = mutex.withLock {
-        cachedToken = null
-        storage.delete("auth_token")
-    }
-    
-    private suspend fun loadFromStorage(): TokenInfo? {
-        val stored = storage.load("auth_token") ?: return null
-        return try {
-            json.decodeFromString(TokenInfo.serializer(), stored).also {
-                cachedToken = it
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
-
-// src/commonMain/kotlin/com/edugo/shared/auth/JWTDecoder.kt
-package com.edugo.shared.auth
-
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
-
-@Serializable
-data class JWTPayload(
-    val sub: String,
-    val exp: Long,
-    val iat: Long,
-    val roles: List<String>? = null
-) {
-    val isExpired: Boolean
-        get() = kotlinx.datetime.Clock.System.now().epochSeconds > exp
-}
-
-object JWTDecoder {
-    private val json = Json { ignoreUnknownKeys = true }
-    
-    @OptIn(ExperimentalEncodingApi::class)
-    fun decode(token: String): JWTPayload {
-        val parts = token.split(".")
-        require(parts.size == 3) { "Invalid JWT format" }
-        
-        val payloadBase64 = parts[1]
-            .replace("-", "+")
-            .replace("_", "/")
-        
-        // Pad if necessary
-        val padded = payloadBase64.padEnd(
-            (payloadBase64.length + 3) / 4 * 4, '='
-        )
-        
-        val decoded = Base64.decode(padded)
-        val payloadJson = decoded.decodeToString()
-        
-        return json.decodeFromString(JWTPayload.serializer(), payloadJson)
-    }
-}
-```
-
-### 5.6 modules/roles
-
-```kotlin
-// src/commonMain/kotlin/com/edugo/shared/roles/SystemRole.kt
+// SystemRole.kt
 package com.edugo.shared.roles
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Roles del sistema EduGo.
+ * DEBEN coincidir exactamente con el backend: admin, teacher, student, guardian
+ */
 @Serializable
-enum class SystemRole {
-    @SerialName("student")
-    STUDENT,
+public enum class SystemRole {
+    @SerialName("admin") ADMIN,
+    @SerialName("teacher") TEACHER,
+    @SerialName("student") STUDENT,
+    @SerialName("guardian") GUARDIAN;
     
-    @SerialName("teacher")
-    TEACHER,
+    public val displayName: String get() = when (this) {
+        ADMIN -> "Administrador"
+        TEACHER -> "Profesor"
+        STUDENT -> "Estudiante"
+        GUARDIAN -> "Acudiente"
+    }
     
-    @SerialName("guardian")
-    GUARDIAN,
+    /** Nivel jerárquico del rol (mayor = más privilegios) */
+    public val level: Int get() = when (this) {
+        ADMIN -> 100
+        TEACHER -> 50
+        STUDENT -> 30
+        GUARDIAN -> 20
+    }
     
-    @SerialName("school_admin")
-    SCHOOL_ADMIN,
+    public val permissions: Set<Permission> get() = RolePermissions.getPermissions(this)
     
-    @SerialName("system_admin")
-    SYSTEM_ADMIN;
+    public fun hasPermission(permission: Permission): Boolean = permission in permissions
     
-    val displayName: String
-        get() = when (this) {
-            STUDENT -> "Estudiante"
-            TEACHER -> "Profesor"
-            GUARDIAN -> "Acudiente"
-            SCHOOL_ADMIN -> "Administrador de Escuela"
-            SYSTEM_ADMIN -> "Administrador del Sistema"
-        }
+    /** Verifica si este rol tiene al menos el nivel del rol especificado */
+    public fun hasAtLeast(role: SystemRole): Boolean = this.level >= role.level
     
-    val permissions: Set<Permission>
-        get() = when (this) {
-            STUDENT -> setOf(
-                Permission.VIEW_MATERIALS,
-                Permission.TAKE_QUIZZES,
-                Permission.VIEW_PROGRESS
-            )
-            TEACHER -> setOf(
-                Permission.VIEW_MATERIALS,
-                Permission.UPLOAD_MATERIALS,
-                Permission.CREATE_QUIZZES,
-                Permission.VIEW_STUDENT_PROGRESS
-            )
-            GUARDIAN -> setOf(
-                Permission.VIEW_PROGRESS,
-                Permission.VIEW_STUDENT_INFO
-            )
-            SCHOOL_ADMIN -> setOf(
-                Permission.MANAGE_SCHOOL,
-                Permission.MANAGE_USERS,
-                Permission.VIEW_REPORTS
-            )
-            SYSTEM_ADMIN -> Permission.entries.toSet()
-        }
-    
-    fun hasPermission(permission: Permission): Boolean = permission in permissions
+    public companion object {
+        /** Valida si un string corresponde a un rol válido */
+        public fun fromString(value: String): SystemRole? = 
+            entries.find { it.name.equals(value, ignoreCase = true) }
+    }
 }
 
-// src/commonMain/kotlin/com/edugo/shared/roles/Permission.kt
-package com.edugo.shared.roles
-
-enum class Permission {
-    VIEW_MATERIALS,
-    UPLOAD_MATERIALS,
-    TAKE_QUIZZES,
-    CREATE_QUIZZES,
-    VIEW_PROGRESS,
-    VIEW_STUDENT_PROGRESS,
-    VIEW_STUDENT_INFO,
-    MANAGE_SCHOOL,
-    MANAGE_USERS,
-    VIEW_REPORTS
-}
-```
-
-### 5.7 modules/models
-
-```kotlin
-// src/commonMain/kotlin/com/edugo/shared/models/User.kt
-package com.edugo.shared.models
-
-import com.edugo.shared.roles.SystemRole
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-
+// Permission.kt
 @Serializable
-data class User(
-    val id: String,
-    val email: String,
-    val firstName: String,
-    val lastName: String,
-    val roles: List<SystemRole>,
-    val createdAt: Instant,
-    val updatedAt: Instant
-) {
-    val fullName: String get() = "$firstName $lastName"
-    
-    fun hasRole(role: SystemRole): Boolean = role in roles
-    
-    val primaryRole: SystemRole get() = roles.firstOrNull() ?: SystemRole.STUDENT
+public enum class Permission {
+    @SerialName("materials:view") VIEW_MATERIALS,
+    @SerialName("materials:upload") UPLOAD_MATERIALS,
+    @SerialName("materials:edit") EDIT_MATERIALS,
+    @SerialName("materials:delete") DELETE_MATERIALS,
+    @SerialName("quizzes:take") TAKE_QUIZZES,
+    @SerialName("quizzes:create") CREATE_QUIZZES,
+    @SerialName("quizzes:grade") GRADE_QUIZZES,
+    @SerialName("progress:view_own") VIEW_OWN_PROGRESS,
+    @SerialName("progress:view_students") VIEW_STUDENT_PROGRESS,
+    @SerialName("users:view") VIEW_USERS,
+    @SerialName("users:manage") MANAGE_USERS,
+    @SerialName("reports:view") VIEW_REPORTS,
+    @SerialName("reports:export") EXPORT_REPORTS
 }
 
-// src/commonMain/kotlin/com/edugo/shared/models/Material.kt
-package com.edugo.shared.models
-
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class Material(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val fileUrl: String,
-    val mimeType: String,
-    val sizeBytes: Long,
-    val version: Int,
-    val createdAt: Instant,
-    val updatedAt: Instant
-)
-
-@Serializable
-data class MaterialProgress(
-    val materialId: String,
-    val userId: String,
-    val progress: Float, // 0.0 to 1.0
-    val lastViewedAt: Instant,
-    val completedAt: Instant?
-)
+// RolePermissions.kt
+public object RolePermissions {
+    private val permissionMap = mapOf(
+        SystemRole.STUDENT to setOf(
+            Permission.VIEW_MATERIALS, 
+            Permission.TAKE_QUIZZES, 
+            Permission.VIEW_OWN_PROGRESS
+        ),
+        SystemRole.GUARDIAN to setOf(
+            Permission.VIEW_OWN_PROGRESS
+        ),
+        SystemRole.TEACHER to setOf(
+            Permission.VIEW_MATERIALS, 
+            Permission.UPLOAD_MATERIALS, 
+            Permission.EDIT_MATERIALS,
+            Permission.CREATE_QUIZZES, 
+            Permission.GRADE_QUIZZES, 
+            Permission.VIEW_STUDENT_PROGRESS, 
+            Permission.VIEW_REPORTS
+        ),
+        SystemRole.ADMIN to Permission.entries.toSet() // Todos los permisos
+    )
+    
+    public fun getPermissions(role: SystemRole): Set<Permission> = permissionMap[role] ?: emptySet()
+}
 ```
 
 ---
 
-## 6. Patrón expect/actual
+## 7. Grafo de Dependencias entre Modulos
 
-Para código específico de plataforma, usar el patrón `expect/actual`:
-
-```kotlin
-// commonMain
-expect fun createPlatformHttpClient(): HttpClient
-expect fun createSettings(): Settings
-
-// androidMain
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(OkHttp)
-actual fun createSettings(): Settings = SharedPreferencesSettings(...)
-
-// jvmMain  
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(Java)
-actual fun createSettings(): Settings = PreferencesSettings(...)
-
-// jsMain
-actual fun createPlatformHttpClient(): HttpClient = HttpClient(Js)
-actual fun createSettings(): Settings = StorageSettings()
 ```
+                              ┌─────────┐
+                              │ common  │ (Base)
+                              └────┬────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         │                         │                         │
+         ▼                         ▼                         ▼
+    ┌─────────┐              ┌─────────┐              ┌─────────┐
+    │ logger  │              │  roles  │              │ storage │
+    └────┬────┘              └────┬────┘              └────┬────┘
+         │                        │                        │
+         │                        ▼                        │
+         │                   ┌─────────┐                   │
+         │                   │ models  │◄──────────────────┤
+         │                   └────┬────┘                   │
+         │                        │                        │
+         ▼                        │                        ▼
+    ┌─────────┐                   │                   ┌─────────┐
+    │ network │◄──────────────────┼───────────────────│  auth   │
+    └────┬────┘                   │                   └────┬────┘
+         │                        │                        │
+         └────────────────────────┼────────────────────────┘
+                                  ▼
+                             ┌─────────┐
+                             │   api   │
+                             └────┬────┘
+                                  │
+                                  ▼
+                           ┌───────────┐
+                           │ analytics │
+                           └───────────┘
+```
+
+| Modulo | Dependencias Internas | Dependencias Externas |
+|--------|----------------------|----------------------|
+| common | - | kotlinx-serialization, kotlinx-datetime |
+| logger | common | kermit |
+| roles | common | kotlinx-serialization |
+| storage | common | multiplatform-settings |
+| models | common, roles | kotlinx-serialization, kotlinx-datetime |
+| network | common, logger | ktor-client |
+| auth | common, storage, logger | kotlinx-serialization, kotlinx-datetime |
+| api | common, logger, network, auth, models | kotlinx-serialization |
+| analytics | common, logger | kotlinx-serialization, kotlinx-datetime |
 
 ---
 
-## 7. CI/CD con GitHub Actions
+## 8. CI/CD con GitHub Actions
 
 ### .github/workflows/ci.yml
 
@@ -897,190 +925,111 @@ on:
   push:
     branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
 
 jobs:
   build:
+    name: Build & Test
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-    
-    - name: Build
-      run: ./gradlew build
-    
-    - name: Run Tests
-      run: ./gradlew allTests
-    
-  android-instrumented:
+      - uses: actions/checkout@v4
+      
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      
+      - name: Build All Modules
+        run: ./gradlew build --no-daemon
+      
+      - name: Run All Tests
+        run: ./gradlew allTests --no-daemon
+
+  android-check:
+    name: Android Lint
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Enable KVM
-      run: |
-        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-        sudo udevadm control --reload-rules
-        sudo udevadm trigger --name-match=kvm
-    
-    - name: Android Tests
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 35
-        arch: x86_64
-        script: ./gradlew connectedAndroidTest
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew lintDebug --no-daemon
 
   js-tests:
+    name: JavaScript Tests
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: JS Browser Tests
-      run: ./gradlew jsBrowserTest
-```
-
-### .github/workflows/publish.yml
-
-```yaml
-name: Publish
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Publish to Maven
-      run: ./gradlew publish
-      env:
-        MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-        MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew jsBrowserTest --no-daemon
 ```
 
 ---
 
-## 8. Versionado
+## 9. Comandos Utiles de Gradle
 
-### Estrategia: Monorepo con Version Catalog
+```bash
+# Build completo
+./gradlew build
 
-Todas las versiones se manejan en `gradle/libs.versions.toml`.
+# Solo compilar sin tests
+./gradlew assemble
 
-### Formato de Tags
+# Ejecutar todos los tests
+./gradlew allTests
 
-- Global: `v1.0.0`
-- Por módulo (opcional): `common/v1.0.0`, `auth/v1.0.0`
+# Tests por plataforma
+./gradlew androidTest
+./gradlew desktopTest
+./gradlew jsBrowserTest
 
-### Publicación
+# Limpiar
+./gradlew clean
 
-Publicar a:
-- Maven Central (para librerías públicas)
-- GitHub Packages (para uso interno)
-- JitPack (alternativa simple)
+# Verificar dependencias
+./gradlew dependencies
 
----
-
-## 9. Grafo de Dependencias
-
-```
-common (base - sin dependencias)
-   ↑
-   ├── logger (depende de: common)
-   │      ↑
-   │      └── network (depende de: common, logger)
-   │             ↑
-   ├── storage (depende de: common)
-   │      ↑
-   │      └── auth (depende de: common, storage, network)
-   │             ↑
-   ├── roles (depende de: common)
-   │      ↑
-   │      └── models (depende de: common, roles)
-   │             ↑
-   │             └── api (depende de: network, auth, models)
-   │
-   └── analytics (depende de: common, logger)
+# Publicar localmente
+./gradlew publishToMavenLocal
 ```
 
 ---
 
-## 10. Decisiones de Web Target
+## 10. Fuentes y Referencias
 
-### Kotlin/JS vs WASM
-
-**Decisión actual: Kotlin/JS**
-
-Razón: Kotlin/JS es estable y maduro. WASM está en Alpha/Beta.
-
-**Preparación para WASM:**
-- Mantener código en `commonMain` tanto como sea posible
-- Evitar dependencias específicas de JS cuando existan alternativas multiplataforma
-- Cuando WASM sea estable (estimado 2025-2026), agregar target:
-
-```kotlin
-// Futuro
-wasmJs {
-    browser()
-    binaries.library()
-}
-```
-
----
-
-## 11. Fuentes Consultadas
-
-- [Kotlin Multiplatform Overview](https://kotlinlang.org/docs/multiplatform.html)
-- [KMP Stable Announcement (Nov 2023)](https://blog.jetbrains.com/kotlin/2023/11/kotlin-multiplatform-stable/)
-- [Ktor 3.0 Release](https://ktor.io/docs/releases.html)
-- [Kermit Logging Library](https://github.com/touchlab/Kermit)
+### Documentacion Oficial
+- [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html)
+- [Kotlin 2.1.20 Release Notes](https://kotlinlang.org/docs/whatsnew2120.html)
+- [Ktor 3.1 Documentation](https://ktor.io/docs/releases.html)
+- [Kermit Logging](https://kermit.touchlab.co/docs/)
 - [Multiplatform Settings](https://github.com/russhwolf/multiplatform-settings)
-- [kotlinx.datetime](https://github.com/Kotlin/kotlinx-datetime)
-- [KMP Gradle Plugin Best Practices](https://kotlinlang.org/docs/multiplatform-discover-project.html)
+
+### Versiones Verificadas (Enero 2026)
+- kotlinx-coroutines: 1.10.2
+- kotlinx-serialization: 1.8.1
+- kotlinx-datetime: 0.6.2
+- Ktor: 3.1.3
+- Kermit: 2.0.4
+- multiplatform-settings: 1.3.0
+- kotlin.uuid: Nativo en Kotlin 2.1+
 
 ---
 
-## 12. Archivos de Referencia en edugo-shared (Go)
-
-Los siguientes archivos de Go sirvieron como referencia para mantener consistencia:
-
-- `edugo-shared/common/errors/errors.go` - Patrón de AppError y ErrorCode
-- `edugo-shared/common/types/enum/role.go` - Definición de SystemRole
-
----
-
-**Estado**: Plan completo listo para implementación
-**Última actualización**: 2026-01-02
+**Estado**: Plan completo listo para implementacion  
+**Version del documento**: 2.0.0  
+**Ultima actualizacion**: 2026-01-02  
+**Autor**: Agente KMP

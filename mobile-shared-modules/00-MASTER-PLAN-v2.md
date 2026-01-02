@@ -6,27 +6,62 @@ Plan para crear dos repositorios de módulos compartidos equivalentes a `edugo-s
 
 | Proyecto | Plataforma | Stack |
 |----------|------------|-------|
-| **edugo-swift-shared** | iOS 26+, iPadOS 26+, macOS 26+ | Swift 6.0, SPM |
-| **edugo-kmp-shared** | Android, Desktop, Web | Kotlin 2.1.0, KMP |
+| **edugo-swift-shared** | iOS 18+, iPadOS 18+, macOS 15+ | Swift 6.2, SPM |
+| **edugo-kmp-shared** | Android 8+ (API 26), Desktop, Web | Kotlin 2.1.x, KMP |
+
+---
+
+## Versiones Definidas (En Piedra)
+
+### Swift/Apple Stack
+| Componente | Versión | Notas |
+|------------|---------|-------|
+| Swift | **6.2** | Última versión estable |
+| iOS/iPadOS mínimo | **18.0** | Aprovecha Swift 6 concurrency |
+| macOS mínimo | **15.0** (Sequoia) | Sincronizado con iOS 18 |
+| Xcode | **16.2+** | Requerido para Swift 6.2 |
+| SPM Tools Version | **6.0** | Compatible con Swift 6 |
+
+### Kotlin/KMP Stack
+| Componente | Versión | Notas |
+|------------|---------|-------|
+| Kotlin | **2.1.20** | Última estable (Enero 2026) |
+| Android compileSdk | **35** | Android 15 |
+| Android targetSdk | **35** | Android 15 |
+| Android minSdk | **26** | Android 8.0 (Oreo) ~95% cobertura |
+| Gradle | **8.11** | Compatible con Kotlin 2.1 |
+| JDK | **21** | LTS recomendado |
+| AGP | **8.7.x** | Android Gradle Plugin |
+
+### KMP Dependencies Base
+| Librería | Versión | Propósito |
+|----------|---------|-----------|
+| Ktor | **3.1.x** | HTTP Client multiplataforma |
+| Kotlinx Coroutines | **1.10.x** | Async/Concurrency |
+| Kotlinx Serialization | **1.8.x** | JSON parsing |
+| Kotlinx DateTime | **0.6.x** | Manejo de fechas |
+| Kermit | **2.0.x** | Logging multiplataforma |
+| Multiplatform Settings | **1.3.x** | Key-value storage |
+| Benasher44 UUID | **0.8.x** | UUIDs multiplataforma |
 
 ---
 
 ## Decisiones Confirmadas
 
 ### Plataformas
-- **Apple**: iOS/iPadOS/macOS versión 26+ (WWDC 2025)
-- **KMP es CENTRAL**: Android, JVM Desktop, Kotlin/JS (Web)
+- **Apple**: iOS/iPadOS 18+, macOS 15+ (aprovecha Swift 6 strict concurrency)
+- **KMP es CENTRAL**: Android 8+, JVM Desktop, Kotlin/JS (Web)
 
 ### Tecnologías
-- **HTTP Client**: Ktor 3.0.2 (KMP), URLSession nativo (Swift)
-- **Logging**: Kermit (KMP), os.Logger (Swift)
+- **HTTP Client**: Ktor 3.1.x (KMP), URLSession nativo (Swift)
+- **Logging**: Kermit 2.0.x (KMP), os.Logger nativo (Swift)
 - **Storage**: multiplatform-settings (KMP), Keychain nativo (Swift)
 - **Telemetría**: Módulo independiente en ambos
 
 ### Arquitectura
 - **DI**: NO en shared (responsabilidad del consumidor)
 - **Sin dependencias externas en Swift** - todo nativo
-- **Dependencias mínimas en KMP** - solo ecosistema Kotlin
+- **Dependencias mínimas en KMP** - solo ecosistema JetBrains/Kotlin
 
 ---
 
@@ -83,8 +118,8 @@ Plan para crear dos repositorios de módulos compartidos equivalentes a `edugo-s
 
 | Documento | Descripción |
 |-----------|-------------|
-| [01-SWIFT-SETUP-PLAN.md](./01-SWIFT-SETUP-PLAN.md) | Plan completo para Swift |
-| [01-KMP-SETUP-PLAN.md](./01-KMP-SETUP-PLAN.md) | Plan completo para KMP |
+| [01-SWIFT-SETUP-PLAN.md](./01-SWIFT-SETUP-PLAN.md) | Plan completo para Swift 6.2 |
+| [01-KMP-SETUP-PLAN.md](./01-KMP-SETUP-PLAN.md) | Plan completo para KMP Kotlin 2.1 |
 
 ---
 
@@ -103,5 +138,25 @@ logger/                     → EduGoLogger             → modules/logger
 
 ---
 
-**Estado**: Plan aprobado, listo para implementación
+## Matriz de Compatibilidad
+
+### Swift 6.2 Features Utilizados
+- Strict Concurrency checking (complete)
+- Sendable protocol enforcement
+- Actor isolation
+- async/await nativo
+- Structured concurrency
+- Mutex (iOS 18+)
+
+### Kotlin 2.1 Features Utilizados
+- K2 compiler (default)
+- Explicit API mode
+- Context receivers (experimental)
+- Value classes
+- Sealed interfaces
+- Coroutines native integration
+
+---
+
+**Estado**: Plan aprobado, versiones definidas
 **Última actualización**: 2026-01-02
