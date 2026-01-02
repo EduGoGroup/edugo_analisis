@@ -6,7 +6,13 @@
 - **Subproceso:** Obtener Resumen de Material
 - **Prioridad:** Alta
 - **Dependencias:** RFC-010 (Listar Materiales), RFC-012 (Ver Detalle Material), Worker (crítico)
-- **Estado API:** ❌ Bloqueado (depende Worker)
+- **Estado API:** ⚠️ IMPLEMENTADO CON BUG (requiere fix de nombre de colección)
+
+> **ACTUALIZACIÓN 2025-01-02:** Este RFC está implementado pero con un bug:
+> - **Worker:** ✅ Genera resumen y guarda en MongoDB `material_summaries`
+> - **API Mobile:** ✅ Endpoint `GET /v1/materials/:id/summary` existe (`summary_handler.go`)
+> - **BUG:** 🐛 API Mobile busca en colección `material_summary` (singular) pero Worker guarda en `material_summaries` (plural)
+> - **FIX REQUERIDO:** Cambiar línea 20 de `summary_repository_impl.go` de `material_summary` a `material_summaries`
 
 ## Descripción
 
