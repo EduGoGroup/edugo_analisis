@@ -6,7 +6,13 @@
 - **Subproceso:** Obtener Quiz
 - **Prioridad:** Alta
 - **Dependencias:** RFC-010 (Listar Materiales), RFC-012 (Ver Detalle Material), Worker (crítico)
-- **Estado API:** ❌ Bloqueado (depende Worker)
+- **Estado API:** ✅ IMPLEMENTADO (Worker + API Mobile)
+
+> **ACTUALIZACIÓN 2025-01-02:** Este RFC está completamente implementado:
+> - **Worker:** Genera quiz automáticamente al procesar PDF (`material_uploaded_processor.go`)
+> - **API Mobile:** Endpoint `GET /v1/materials/:id/assessment` (`assessment_handler.go`)
+> - **Scoring:** Validación en servidor, nunca expone respuestas correctas al cliente
+> - **Storage:** MongoDB `material_assessment_worker` (preguntas) + PostgreSQL `assessments` (metadata)
 
 ## Descripción
 

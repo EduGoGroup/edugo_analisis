@@ -6,7 +6,15 @@
 - **Subproceso:** Crear Intento de Evaluación
 - **Prioridad:** Alta
 - **Dependencias:** RFC-030 (Obtener Quiz), Worker (crítico)
-- **Estado API:** ❌ Bloqueado (depende Worker para quiz existente)
+- **Estado API:** ✅ IMPLEMENTADO (API Mobile)
+
+> **ACTUALIZACIÓN 2025-01-02:** Este RFC está completamente implementado:
+> - **Endpoint:** `POST /v1/materials/:id/assessment/attempts` (`assessment_handler.go:CreateMaterialAttempt`)
+> - **Scoring:** 100% servidor-side en `assessment_attempt_service.go:validateAndScoreAnswers`
+> - **Feedback:** Retorna explicación por pregunta (correcto/incorrecto + mensaje educativo)
+> - **Persistencia:** PostgreSQL `assessment_attempts` + `assessment_attempt_answers`
+> - **Seguridad:** Respuestas correctas NUNCA expuestas al cliente, validación contra MongoDB
+> - **Extras:** Control de intentos máximos, historial de intentos (`GET /v1/users/me/attempts`)
 
 ## Descripción
 

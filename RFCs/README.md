@@ -89,10 +89,15 @@ Sistema de evaluaciones generadas por IA.
 
 | RFC | Nombre | Estado |
 |-----|--------|--------|
-| [RFC-030](./04-evaluaciones/RFC-030-obtener-quiz.md) | Obtener Quiz Generado por IA | ❌ Depende Worker |
-| [RFC-031](./04-evaluaciones/RFC-031-enviar-intento.md) | Enviar Respuestas de Quiz | ❌ Depende Worker |
+| [RFC-030](./04-evaluaciones/RFC-030-obtener-quiz.md) | Obtener Quiz Generado por IA | ✅ IMPLEMENTADO |
+| [RFC-031](./04-evaluaciones/RFC-031-enviar-intento.md) | Enviar Respuestas de Quiz | ✅ IMPLEMENTADO |
 | [RFC-032](./04-evaluaciones/RFC-032-ver-resultados.md) | Ver Resultados de Intento | ✅ Listo |
 | [RFC-033](./04-evaluaciones/RFC-033-historial-intentos.md) | Historial de Intentos | ✅ Listo |
+
+> **ACTUALIZACIÓN 2025-01-02:** RFC-030 y RFC-031 están completamente implementados:
+> - Worker genera quiz automáticamente al procesar PDF
+> - API Mobile expone endpoints para obtener quiz y enviar respuestas
+> - Scoring 100% servidor-side (seguro)
 
 ---
 
@@ -124,9 +129,11 @@ Dashboards y estadísticas de uso.
 | Métrica | Valor |
 |---------|-------|
 | **Total RFCs** | 28 |
-| **Listos para implementar** | 22 |
-| **Dependen del Worker** | 3 |
+| **Listos para implementar** | 24 |
+| **Dependen del Worker** | 1 (RFC-040 Resumen) |
 | **Parciales (requieren backend)** | 3 |
+
+> **ACTUALIZACIÓN 2025-01-02:** Quiz IA (RFC-030, RFC-031) ahora están implementados
 
 ---
 
@@ -226,11 +233,14 @@ interface JWTClaims {
 
 Los siguientes RFCs requieren que el Worker esté activo:
 
-| RFC | Funcionalidad | Alternativa |
-|-----|---------------|-------------|
-| RFC-030 | Obtener Quiz | Mostrar "Procesando..." |
-| RFC-031 | Enviar Intento | Bloquear hasta quiz disponible |
-| RFC-040 | Obtener Resumen | Mostrar "Generando..." |
+| RFC | Funcionalidad | Estado | Alternativa |
+|-----|---------------|--------|-------------|
+| RFC-030 | Obtener Quiz | ✅ IMPLEMENTADO | Worker + API Mobile listos |
+| RFC-031 | Enviar Intento | ✅ IMPLEMENTADO | Scoring servidor-side |
+| RFC-040 | Obtener Resumen | ⚠️ PENDIENTE | Mostrar "Generando..." |
+
+> **NOTA:** El Worker genera tanto Quiz como Resumen automáticamente al procesar PDF.
+> RFC-040 requiere endpoint en API Mobile para exponer el resumen (ya existe en MongoDB `material_summaries`).
 
 **Verificación del Worker:**
 ```bash
